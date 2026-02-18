@@ -472,7 +472,8 @@
         }
 
         .form-field select,
-        .form-field textarea {
+        .form-field textarea,
+        .form-field input[type="date"] {
             width: 100%;
             background: var(--bg-secondary);
             border: 1px solid var(--reuters-grey);
@@ -485,7 +486,8 @@
         }
 
         .form-field select:focus,
-        .form-field textarea:focus {
+        .form-field textarea:focus,
+        .form-field input[type="date"]:focus {
             outline: none;
             border-color: var(--reuters-orange);
         }
@@ -652,7 +654,7 @@
         const { useState, useEffect } = React;
 
         // CONFIGURATION - Replace with your Dashboard API URL
-        const DASHBOARD_API_URL = 'https://script.google.com/macros/s/AKfycbwP1wjy8TgvR3lbzhvDsDH1NEgA3yjzjL2KFTzvQ5yFj8aDbIMqDVhlcbRcpcyfmTMW/exec';
+        const DASHBOARD_API_URL = 'YOUR_DASHBOARD_API_URL_HERE';
 
         // Status options for dropdown
         const STATUS_OPTIONS = [
@@ -668,6 +670,67 @@
             'Paused',
             'Completed'
         ];
+
+        // Format date from various formats to DD/MM/YYYY
+        const formatDate = (dateStr) => {
+            if (!dateStr || dateStr === 'N/A') return '';
+            
+            try {
+                let date;
+                
+                // Handle ISO format (2026-02-18T00:00:00.000Z)
+                if (dateStr.includes('T')) {
+                    date = new Date(dateStr);
+                }
+                // Handle YYYY-MM-DD format
+                else if (dateStr.includes('-')) {
+                    const parts = dateStr.split('-');
+                    date = new Date(parts[0], parts[1] - 1, parts[2]);
+                }
+                // Handle DD/MM/YYYY format (already correct)
+                else if (dateStr.includes('/')) {
+                    return dateStr;
+                }
+                else {
+                    return dateStr;
+                }
+                
+                const day = String(date.getDate()).padStart(2, '0');
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const year = date.getFullYear();
+                
+                return `${day}/${month}/${year}`;
+            } catch (e) {
+                return dateStr;
+            }
+        };
+
+        // Convert DD/MM/YYYY back to YYYY-MM-DD for date input
+        const toInputDate = (dateStr) => {
+            if (!dateStr || dateStr === 'N/A' || dateStr === '') return '';
+            
+            try {
+                // If already in YYYY-MM-DD format
+                if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                    return dateStr;
+                }
+                
+                // If in DD/MM/YYYY format
+                if (dateStr.includes('/')) {
+                    const parts = dateStr.split('/');
+                    return `${parts[2]}-${parts[1]}-${parts[0]}`;
+                }
+                
+                // If ISO format
+                if (dateStr.includes('T')) {
+                    return dateStr.split('T')[0];
+                }
+                
+                return '';
+            } catch (e) {
+                return '';
+            }
+        };
 
         function App() {
             const [campaigns, setCampaigns] = useState([]);
@@ -767,7 +830,9 @@
                 setEditingCampaign({
                     ...campaign,
                     newStatus: campaign.status,
-                    newNotes: campaign.notes || ''
+                    newNotes: campaign.notes || '',
+                    newStartDate: toInputDate(campaign.startDate),
+                    newEndDate: toInputDate(campaign.endDate)
                 });
             };
 
@@ -802,6 +867,36 @@
                             value: editingCampaign.newNotes
                         })
                     });
+
+                    // Update start date
+                    if (editingCampaign.newStartDate) {
+                        await fetch(DASHBOARD_API_URL, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                action: 'updateCampaign',
+                                region: editingCampaign.region,
+                                rowNumber: editingCampaign.rowNumber,
+                                field: 'startDate',
+                                value: editingCampaign.newStartDate
+                            })
+                        });
+                    }
+
+                    // Update end date
+                    if (editingCampaign.newEndDate) {
+                        await fetch(DASHBOARD_API_URL, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                action: 'updateCampaign',
+                                region: editingCampaign.region,
+                                rowNumber: editingCampaign.rowNumber,
+                                field: 'endDate',
+                                value: editingCampaign.newEndDate
+                            })
+                        });
+                    }
 
                     showToast('Campaign updated successfully!', 'success');
                     closeEditModal();
@@ -964,11 +1059,13 @@
                                                 <th>Seller</th>
                                                 <th>Type</th>
                                                 <th>Campaign Name</th>
-                                                <th>Status</th>
+                                                <th>Events</th>
+                                                <th>Team</th>
                                                 <th>Start Date</th>
                                                 <th>End Date</th>
-                                                <th>CM Owner</th>
+                                                <th>Status</th>
                                                 <th>Net Total</th>
+                                                <th>Links</th>
                                                 <th>Actions</th>
                                             </tr>
                                         </thead>
@@ -982,16 +1079,43 @@
                                                             {campaign.type}
                                                         </span>
                                                     </td>
-                                                    <td style={{fontWeight: 600}}>{campaign.name}</td>
+                                                    <td style={{fontWeight: 600, minWidth: '180px'}}>{campaign.name}</td>
+                                                    <td>{campaign.events}</td>
+                                                    <td style={{minWidth: '150px', fontSize: '12px'}}>
+                                                        {campaign.type === 'Direct' ? (
+                                                            <>
+                                                                {campaign.csOpOwner !== 'N/A' && <div>CS: {campaign.csOpOwner}</div>}
+                                                                <div>CM: {campaign.cmOwner}</div>
+                                                                {campaign.projectProgType !== 'N/A' && <div>PM: {campaign.projectProgType}</div>}
+                                                                <div>AdOps: {campaign.adopsOwner}</div>
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                {campaign.csOpOwner !== 'N/A' && <div>Op: {campaign.csOpOwner}</div>}
+                                                                <div>CM: {campaign.cmOwner}</div>
+                                                                <div>AdOps: {campaign.adopsOwner}</div>
+                                                            </>
+                                                        )}
+                                                    </td>
+                                                    <td>{formatDate(campaign.startDate)}</td>
+                                                    <td>{formatDate(campaign.endDate)}</td>
                                                     <td>
                                                         <span className={`status-pill ${getStatusClass(campaign.status)}`}>
                                                             {campaign.status}
                                                         </span>
                                                     </td>
-                                                    <td>{campaign.startDate}</td>
-                                                    <td>{campaign.endDate}</td>
-                                                    <td>{campaign.cmOwner}</td>
                                                     <td>{campaign.currency} {campaign.netTotal?.toLocaleString()}</td>
+                                                    <td style={{minWidth: '100px', fontSize: '12px'}}>
+                                                        {campaign.pioLink && campaign.pioLink !== 'N/A' && (
+                                                            <div><a href={campaign.pioLink} target="_blank" style={{color: 'var(--reuters-orange)'}}>PIO</a></div>
+                                                        )}
+                                                        {campaign.gamLink && campaign.gamLink !== 'N/A' && (
+                                                            <div><a href={campaign.gamLink} target="_blank" style={{color: 'var(--reuters-orange)'}}>GAM</a></div>
+                                                        )}
+                                                        {campaign.burtLink && campaign.burtLink !== 'N/A' && (
+                                                            <div><a href={campaign.burtLink} target="_blank" style={{color: 'var(--reuters-orange)'}}>Burt</a></div>
+                                                        )}
+                                                    </td>
                                                     <td>
                                                         <button 
                                                             className="edit-btn"
@@ -1023,6 +1147,30 @@
                                         <div style={{color: 'var(--text-primary)', fontSize: '16px', fontWeight: 600}}>
                                             {editingCampaign.name}
                                         </div>
+                                    </div>
+
+                                    <div className="form-field">
+                                        <label>Start Date</label>
+                                        <input 
+                                            type="date"
+                                            value={editingCampaign.newStartDate}
+                                            onChange={(e) => setEditingCampaign({
+                                                ...editingCampaign,
+                                                newStartDate: e.target.value
+                                            })}
+                                        />
+                                    </div>
+
+                                    <div className="form-field">
+                                        <label>End Date</label>
+                                        <input 
+                                            type="date"
+                                            value={editingCampaign.newEndDate}
+                                            onChange={(e) => setEditingCampaign({
+                                                ...editingCampaign,
+                                                newEndDate: e.target.value
+                                            })}
+                                        />
                                     </div>
 
                                     <div className="form-field">

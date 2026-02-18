@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campaign Dashboard | Reuters EMEA</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --reuters-orange: #d64000;
+            --reuters-dark: #212223;
+            --reuters-grey: #404040;
+            --bg-primary: #0a0a0b;
+            --bg-secondary: #16161a;
+            --bg-card: #1e1e24;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0ab;
+            --accent-orange: #ff6b35;
+            --success: #10b981;
+            --warning: #f59e0b;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        #root {
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .dashboard-header {
+            background: var(--bg-secondary);
+            border-bottom: 2px solid var(--reuters-orange);
+            padding: 20px 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .logo-icon {
+            width: 45px;
+            height: 45px;
+            background: var(--reuters-orange);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 24px;
+            color: white;
+        }
+
+        .header-title {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--reuters-orange);
+            letter-spacing: -0.5px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .refresh-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--reuters-grey);
+            color: var(--text-primary);
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s;
+            font-family: 'IBM Plex Mono', monospace;
+        }
+
+        .refresh-btn:hover {
+            background: var(--reuters-orange);
+            border-color: var(--reuters-orange);
+            transform: translateY(-2px);
+        }
+
+        .last-updated {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+            padding: 40px;
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--reuters-grey);
+            border-radius: 12px;
+            padding: 25px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--reuters-orange);
+            transition: width 0.3s;
+        }
+
+        .stat-card:hover::before {
+            width: 100%;
+            opacity: 0.1;
+        }
+
+        .stat-card:hover {
+            border-color: var(--reuters-orange);
+            transform: translateY(-4px);
+        }
+
+        .stat-label {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+        }
+
+        .stat-value {
+            font-size: 42px;
+            font-weight: 700;
+            color: var(--reuters-orange);
+            font-family: 'IBM Plex Mono', monospace;
+        }
+
+        .stat-detail {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-top: 8px;
+        }
+
+        /* Filters */
+        .filters-section {
+            background: var(--bg-card);
+            border: 1px solid var(--reuters-grey);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+
+        .filters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .filter-group label {
+            display: block;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .filter-group select,
+        .filter-group input {
+            width: 100%;
+            background: var(--bg-secondary);
+            border: 1px solid var(--reuters-grey);
+            color: var(--text-primary);
+            padding: 10px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: 'DM Sans', sans-serif;
+            transition: all 0.3s;
+        }
+
+        .filter-group select:focus,
+        .filter-group input:focus {
+            outline: none;
+            border-color: var(--reuters-orange);
+            background: var(--bg-card);
+        }
+
+        .clear-filters {
+            background: transparent;
+            border: 1px solid var(--reuters-grey);
+            color: var(--text-secondary);
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-family: 'IBM Plex Mono', monospace;
+            transition: all 0.3s;
+            margin-top: 24px;
+        }
+
+        .clear-filters:hover {
+            border-color: var(--reuters-orange);
+            color: var(--reuters-orange);
+        }
+
+        /* Table */
+        .table-container {
+            background: var(--bg-card);
+            border: 1px solid var(--reuters-grey);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .table-header {
+            padding: 20px 25px;
+            border-bottom: 1px solid var(--reuters-grey);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .table-title {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--reuters-orange);
+        }
+
+        .campaign-count {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        thead {
+            background: var(--bg-secondary);
+            position: sticky;
+            top: 0;
+        }
+
+        th {
+            font-family: 'IBM Plex Mono', monospace;
+            text-align: left;
+            padding: 15px 12px;
+            font-weight: 600;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--reuters-grey);
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 16px 12px;
+            border-bottom: 1px solid rgba(64, 64, 64, 0.3);
+            color: var(--text-primary);
+        }
+
+        tr:hover {
+            background: rgba(214, 64, 0, 0.05);
+        }
+
+        /* Status Pills */
+        .status-pill {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            font-family: 'IBM Plex Mono', monospace;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-live {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+            border: 1px solid var(--success);
+        }
+
+        .status-ready {
+            background: rgba(59, 130, 246, 0.2);
+            color: #3b82f6;
+            border: 1px solid #3b82f6;
+        }
+
+        .status-pending {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--warning);
+            border: 1px solid var(--warning);
+        }
+
+        .status-paused {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            border: 1px solid #ef4444;
+        }
+
+        .status-completed {
+            background: rgba(107, 114, 128, 0.2);
+            color: #6b7280;
+            border: 1px solid #6b7280;
+        }
+
+        .status-default {
+            background: rgba(160, 160, 171, 0.2);
+            color: var(--text-secondary);
+            border: 1px solid var(--reuters-grey);
+        }
+
+        /* Type Badge */
+        .type-badge {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        .type-direct {
+            background: rgba(214, 64, 0, 0.2);
+            color: var(--reuters-orange);
+        }
+
+        .type-programmatic {
+            background: rgba(139, 92, 246, 0.2);
+            color: #8b5cf6;
+        }
+
+        /* Edit Button */
+        .edit-btn {
+            background: transparent;
+            border: 1px solid var(--reuters-grey);
+            color: var(--text-secondary);
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 11px;
+            font-family: 'IBM Plex Mono', monospace;
+            transition: all 0.3s;
+        }
+
+        .edit-btn:hover {
+            background: var(--reuters-orange);
+            border-color: var(--reuters-orange);
+            color: white;
+        }
+
+        /* Edit Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(10, 10, 11, 0.9);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .edit-modal {
+            background: var(--bg-card);
+            border: 1px solid var(--reuters-grey);
+            border-radius: 16px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, var(--reuters-orange) 0%, var(--accent-orange) 100%);
+            padding: 25px 30px;
+            border-radius: 16px 16px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .close-modal {
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 28px;
+            cursor: pointer;
+            line-height: 1;
+            opacity: 0.8;
+            transition: opacity 0.3s;
+        }
+
+        .close-modal:hover {
+            opacity: 1;
+        }
+
+        .modal-body {
+            padding: 30px;
+        }
+
+        .form-field {
+            margin-bottom: 25px;
+        }
+
+        .form-field label {
+            display: block;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .form-field select,
+        .form-field textarea {
+            width: 100%;
+            background: var(--bg-secondary);
+            border: 1px solid var(--reuters-grey);
+            color: var(--text-primary);
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: 'DM Sans', sans-serif;
+            transition: all 0.3s;
+        }
+
+        .form-field select:focus,
+        .form-field textarea:focus {
+            outline: none;
+            border-color: var(--reuters-orange);
+        }
+
+        .form-field textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .save-btn {
+            width: 100%;
+            background: linear-gradient(135deg, var(--reuters-orange) 0%, var(--accent-orange) 100%);
+            border: none;
+            color: white;
+            padding: 14px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: 'IBM Plex Mono', monospace;
+            transition: all 0.3s;
+        }
+
+        .save-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(214, 64, 0, 0.4);
+        }
+
+        .save-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Loading State */
+        .loading-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 60vh;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .loader {
+            width: 50px;
+            height: 50px;
+            border: 4px solid var(--reuters-grey);
+            border-top-color: var(--reuters-orange);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-family: 'IBM Plex Mono', monospace;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .empty-state-text {
+            font-size: 16px;
+            font-family: 'IBM Plex Mono', monospace;
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: var(--bg-card);
+            border: 1px solid var(--reuters-grey);
+            border-left: 4px solid var(--reuters-orange);
+            padding: 16px 20px;
+            border-radius: 8px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 2000;
+            animation: slideIn 0.3s ease;
+            font-family: 'DM Sans', sans-serif;
+        }
+
+        .toast.success {
+            border-left-color: var(--success);
+        }
+
+        .toast.error {
+            border-left-color: #ef4444;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            
+            .dashboard-header {
+                padding: 15px 20px;
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .table-wrapper {
+                overflow-x: scroll;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--reuters-grey);
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--reuters-orange);
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // CONFIGURATION - Replace with your Dashboard API URL
+        const DASHBOARD_API_URL = 'https://script.google.com/macros/s/AKfycbwP1wjy8TgvR3lbzhvDsDH1NEgA3yjzjL2KFTzvQ5yFj8aDbIMqDVhlcbRcpcyfmTMW/exec';
+
+        // Status options for dropdown
+        const STATUS_OPTIONS = [
+            'Add to Placements',
+            'Need Signature on Contract',
+            'Need Signature on IO',
+            'Approval Needed on Pio',
+            'Waiting for Creative Approval',
+            'Ready',
+            'Live',
+            'Partially Live',
+            'Live in-between Waves',
+            'Paused',
+            'Completed'
+        ];
+
+        function App() {
+            const [campaigns, setCampaigns] = useState([]);
+            const [filteredCampaigns, setFilteredCampaigns] = useState([]);
+            const [stats, setStats] = useState(null);
+            const [loading, setLoading] = useState(true);
+            const [editingCampaign, setEditingCampaign] = useState(null);
+            const [lastUpdated, setLastUpdated] = useState(null);
+            const [toast, setToast] = useState(null);
+
+            // Filters
+            const [filters, setFilters] = useState({
+                region: '',
+                seller: '',
+                type: '',
+                status: '',
+                search: ''
+            });
+
+            // Load campaigns on mount and every 60 seconds
+            useEffect(() => {
+                loadCampaigns();
+                const interval = setInterval(loadCampaigns, 60000);
+                return () => clearInterval(interval);
+            }, []);
+
+            // Apply filters whenever campaigns or filters change
+            useEffect(() => {
+                applyFilters();
+            }, [campaigns, filters]);
+
+            const loadCampaigns = async () => {
+                try {
+                    const response = await fetch(`${DASHBOARD_API_URL}?action=getCampaigns`);
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        setCampaigns(data.campaigns);
+                        setLastUpdated(new Date());
+                        
+                        // Load stats
+                        const statsResponse = await fetch(`${DASHBOARD_API_URL}?action=getStats`);
+                        const statsData = await statsResponse.json();
+                        if (statsData.success) {
+                            setStats(statsData.stats);
+                        }
+                    }
+                    setLoading(false);
+                } catch (error) {
+                    console.error('Error loading campaigns:', error);
+                    showToast('Error loading campaigns', 'error');
+                    setLoading(false);
+                }
+            };
+
+            const applyFilters = () => {
+                let filtered = [...campaigns];
+
+                if (filters.region) {
+                    filtered = filtered.filter(c => c.region === filters.region);
+                }
+                if (filters.seller) {
+                    filtered = filtered.filter(c => c.seller === filters.seller);
+                }
+                if (filters.type) {
+                    filtered = filtered.filter(c => c.type === filters.type);
+                }
+                if (filters.status) {
+                    filtered = filtered.filter(c => c.status === filters.status);
+                }
+                if (filters.search) {
+                    const searchLower = filters.search.toLowerCase();
+                    filtered = filtered.filter(c => 
+                        c.name?.toLowerCase().includes(searchLower) ||
+                        c.seller?.toLowerCase().includes(searchLower)
+                    );
+                }
+
+                setFilteredCampaigns(filtered);
+            };
+
+            const updateFilter = (key, value) => {
+                setFilters(prev => ({ ...prev, [key]: value }));
+            };
+
+            const clearFilters = () => {
+                setFilters({
+                    region: '',
+                    seller: '',
+                    type: '',
+                    status: '',
+                    search: ''
+                });
+            };
+
+            const openEditModal = (campaign) => {
+                setEditingCampaign({
+                    ...campaign,
+                    newStatus: campaign.status,
+                    newNotes: campaign.notes || ''
+                });
+            };
+
+            const closeEditModal = () => {
+                setEditingCampaign(null);
+            };
+
+            const saveCampaign = async () => {
+                try {
+                    // Update status
+                    await fetch(DASHBOARD_API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            action: 'updateCampaign',
+                            region: editingCampaign.region,
+                            rowNumber: editingCampaign.rowNumber,
+                            field: 'status',
+                            value: editingCampaign.newStatus
+                        })
+                    });
+
+                    // Update notes
+                    await fetch(DASHBOARD_API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            action: 'updateCampaign',
+                            region: editingCampaign.region,
+                            rowNumber: editingCampaign.rowNumber,
+                            field: 'notes',
+                            value: editingCampaign.newNotes
+                        })
+                    });
+
+                    showToast('Campaign updated successfully!', 'success');
+                    closeEditModal();
+                    setTimeout(() => loadCampaigns(), 1000);
+                } catch (error) {
+                    console.error('Error saving campaign:', error);
+                    showToast('Error saving campaign', 'error');
+                }
+            };
+
+            const showToast = (message, type = 'success') => {
+                setToast({ message, type });
+                setTimeout(() => setToast(null), 3000);
+            };
+
+            const getStatusClass = (status) => {
+                if (!status) return 'status-default';
+                const statusLower = status.toLowerCase();
+                if (statusLower.includes('live')) return 'status-live';
+                if (statusLower.includes('ready')) return 'status-ready';
+                if (statusLower.includes('paused')) return 'status-paused';
+                if (statusLower.includes('completed')) return 'status-completed';
+                return 'status-pending';
+            };
+
+            const getUniqueSellers = () => {
+                return [...new Set(campaigns.map(c => c.seller))].filter(Boolean).sort();
+            };
+
+            if (loading) {
+                return (
+                    <div className="loading-container">
+                        <div className="loader"></div>
+                        <div className="loading-text">Loading campaigns...</div>
+                    </div>
+                );
+            }
+
+            return (
+                <>
+                    {/* Header */}
+                    <header className="dashboard-header">
+                        <div className="logo-section">
+                            <div className="logo-icon">R</div>
+                            <h1 className="header-title">CAMPAIGN DASHBOARD</h1>
+                        </div>
+                        <div className="header-actions">
+                            {lastUpdated && (
+                                <span className="last-updated">
+                                    Last updated: {lastUpdated.toLocaleTimeString()}
+                                </span>
+                            )}
+                            <button className="refresh-btn" onClick={loadCampaigns}>
+                                ↻ Refresh
+                            </button>
+                        </div>
+                    </header>
+
+                    <div className="container">
+                        {/* Stats Cards */}
+                        {stats && (
+                            <div className="stats-grid">
+                                <div className="stat-card">
+                                    <div className="stat-label">Total Campaigns</div>
+                                    <div className="stat-value">{stats.total}</div>
+                                </div>
+                                <div className="stat-card">
+                                    <div className="stat-label">Europe</div>
+                                    <div className="stat-value">{stats.byRegion['Europe'] || 0}</div>
+                                </div>
+                                <div className="stat-card">
+                                    <div className="stat-label">Middle East</div>
+                                    <div className="stat-value">{stats.byRegion['Middle East'] || 0}</div>
+                                </div>
+                                <div className="stat-card">
+                                    <div className="stat-label">Direct</div>
+                                    <div className="stat-value">{stats.byType['Direct'] || 0}</div>
+                                    <div className="stat-detail">
+                                        Programmatic: {stats.byType['Programmatic'] || 0}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Filters */}
+                        <div className="filters-section">
+                            <div className="filters-grid">
+                                <div className="filter-group">
+                                    <label>Region</label>
+                                    <select value={filters.region} onChange={(e) => updateFilter('region', e.target.value)}>
+                                        <option value="">All Regions</option>
+                                        <option value="Europe">Europe</option>
+                                        <option value="Middle East">Middle East</option>
+                                    </select>
+                                </div>
+                                <div className="filter-group">
+                                    <label>Seller</label>
+                                    <select value={filters.seller} onChange={(e) => updateFilter('seller', e.target.value)}>
+                                        <option value="">All Sellers</option>
+                                        {getUniqueSellers().map(seller => (
+                                            <option key={seller} value={seller}>{seller}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="filter-group">
+                                    <label>Campaign Type</label>
+                                    <select value={filters.type} onChange={(e) => updateFilter('type', e.target.value)}>
+                                        <option value="">All Types</option>
+                                        <option value="Direct">Direct</option>
+                                        <option value="Programmatic">Programmatic</option>
+                                    </select>
+                                </div>
+                                <div className="filter-group">
+                                    <label>Status</label>
+                                    <select value={filters.status} onChange={(e) => updateFilter('status', e.target.value)}>
+                                        <option value="">All Statuses</option>
+                                        {STATUS_OPTIONS.map(status => (
+                                            <option key={status} value={status}>{status}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="filter-group">
+                                    <label>Search</label>
+                                    <input 
+                                        type="text" 
+                                        placeholder="Campaign name or seller..."
+                                        value={filters.search}
+                                        onChange={(e) => updateFilter('search', e.target.value)}
+                                    />
+                                </div>
+                                <div className="filter-group">
+                                    <button className="clear-filters" onClick={clearFilters}>
+                                        Clear All
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Campaigns Table */}
+                        <div className="table-container">
+                            <div className="table-header">
+                                <h2 className="table-title">Campaigns</h2>
+                                <span className="campaign-count">
+                                    Showing {filteredCampaigns.length} of {campaigns.length}
+                                </span>
+                            </div>
+                            <div className="table-wrapper">
+                                {filteredCampaigns.length === 0 ? (
+                                    <div className="empty-state">
+                                        <div className="empty-state-icon">📭</div>
+                                        <div className="empty-state-text">
+                                            No campaigns match your filters
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>Region</th>
+                                                <th>Seller</th>
+                                                <th>Type</th>
+                                                <th>Campaign Name</th>
+                                                <th>Status</th>
+                                                <th>Start Date</th>
+                                                <th>End Date</th>
+                                                <th>CM Owner</th>
+                                                <th>Net Total</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {filteredCampaigns.map((campaign, index) => (
+                                                <tr key={index}>
+                                                    <td>{campaign.region}</td>
+                                                    <td>{campaign.seller}</td>
+                                                    <td>
+                                                        <span className={`type-badge type-${campaign.type?.toLowerCase()}`}>
+                                                            {campaign.type}
+                                                        </span>
+                                                    </td>
+                                                    <td style={{fontWeight: 600}}>{campaign.name}</td>
+                                                    <td>
+                                                        <span className={`status-pill ${getStatusClass(campaign.status)}`}>
+                                                            {campaign.status}
+                                                        </span>
+                                                    </td>
+                                                    <td>{campaign.startDate}</td>
+                                                    <td>{campaign.endDate}</td>
+                                                    <td>{campaign.cmOwner}</td>
+                                                    <td>{campaign.currency} {campaign.netTotal?.toLocaleString()}</td>
+                                                    <td>
+                                                        <button 
+                                                            className="edit-btn"
+                                                            onClick={() => openEditModal(campaign)}
+                                                        >
+                                                            Edit
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Edit Modal */}
+                    {editingCampaign && (
+                        <div className="modal-overlay" onClick={closeEditModal}>
+                            <div className="edit-modal" onClick={(e) => e.stopPropagation()}>
+                                <div className="modal-header">
+                                    <h2>Edit Campaign</h2>
+                                    <button className="close-modal" onClick={closeEditModal}>×</button>
+                                </div>
+                                <div className="modal-body">
+                                    <div className="form-field">
+                                        <label>Campaign Name</label>
+                                        <div style={{color: 'var(--text-primary)', fontSize: '16px', fontWeight: 600}}>
+                                            {editingCampaign.name}
+                                        </div>
+                                    </div>
+
+                                    <div className="form-field">
+                                        <label>Status</label>
+                                        <select 
+                                            value={editingCampaign.newStatus}
+                                            onChange={(e) => setEditingCampaign({
+                                                ...editingCampaign,
+                                                newStatus: e.target.value
+                                            })}
+                                        >
+                                            {STATUS_OPTIONS.map(status => (
+                                                <option key={status} value={status}>{status}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div className="form-field">
+                                        <label>Notes / Comments / Updates</label>
+                                        <textarea 
+                                            value={editingCampaign.newNotes}
+                                            onChange={(e) => setEditingCampaign({
+                                                ...editingCampaign,
+                                                newNotes: e.target.value
+                                            })}
+                                            placeholder="Add notes or updates..."
+                                        />
+                                    </div>
+
+                                    <button className="save-btn" onClick={saveCampaign}>
+                                        Save Changes
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Toast Notification */}
+                    {toast && (
+                        <div className={`toast ${toast.type}`}>
+                            <span>{toast.type === 'success' ? '✓' : '✕'}</span>
+                            <span>{toast.message}</span>
+                        </div>
+                    )}
+                </>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>

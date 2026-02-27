@@ -749,8 +749,12 @@
                 seller: '',
                 type: '',
                 status: '',
+                cmOwner: '',
                 search: ''
             });
+
+            // Sorting state
+            const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
 
             // Load campaigns on mount and every 60 seconds
             useEffect(() => {
@@ -803,12 +807,39 @@
                 if (filters.status) {
                     filtered = filtered.filter(c => c.status === filters.status);
                 }
+                if (filters.cmOwner) {
+                    filtered = filtered.filter(c => c.cmOwner === filters.cmOwner);
+                }
                 if (filters.search) {
                     const searchLower = filters.search.toLowerCase();
                     filtered = filtered.filter(c => 
                         c.name?.toLowerCase().includes(searchLower) ||
                         c.seller?.toLowerCase().includes(searchLower)
                     );
+                }
+
+                // Apply sorting
+                if (sortConfig.key) {
+                    filtered.sort((a, b) => {
+                        let aVal = a[sortConfig.key];
+                        let bVal = b[sortConfig.key];
+
+                        // Handle date sorting
+                        if (sortConfig.key === 'startDate' || sortConfig.key === 'endDate') {
+                            aVal = new Date(aVal || '2099-12-31');
+                            bVal = new Date(bVal || '2099-12-31');
+                        }
+
+                        // Handle number sorting (netTotal)
+                        if (sortConfig.key === 'netTotal') {
+                            aVal = parseFloat(aVal) || 0;
+                            bVal = parseFloat(bVal) || 0;
+                        }
+
+                        if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
+                        if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
+                        return 0;
+                    });
                 }
 
                 setFilteredCampaigns(filtered);
@@ -824,8 +855,10 @@
                     seller: '',
                     type: '',
                     status: '',
+                    cmOwner: '',
                     search: ''
                 });
+                setSortConfig({ key: null, direction: 'asc' });
             };
 
             const openEditModal = (campaign) => {
@@ -904,6 +937,23 @@
                 return [...new Set(campaigns.map(c => c.seller))].filter(Boolean).sort();
             };
 
+            const getUniqueCMOwners = () => {
+                return [...new Set(campaigns.map(c => c.cmOwner))].filter(Boolean).sort();
+            };
+
+            const handleSort = (key) => {
+                let direction = 'asc';
+                if (sortConfig.key === key && sortConfig.direction === 'asc') {
+                    direction = 'desc';
+                }
+                setSortConfig({ key, direction });
+            };
+
+            const getSortIndicator = (key) => {
+                if (sortConfig.key !== key) return ' ↕';
+                return sortConfig.direction === 'asc' ? ' ↑' : ' ↓';
+            };
+
             if (loading) {
                 return (
                     <div className="loading-container">
@@ -980,6 +1030,15 @@
                                     </select>
                                 </div>
                                 <div className="filter-group">
+                                    <label>CM Owner</label>
+                                    <select value={filters.cmOwner} onChange={(e) => updateFilter('cmOwner', e.target.value)}>
+                                        <option value="">All CMs</option>
+                                        {getUniqueCMOwners().map(cm => (
+                                            <option key={cm} value={cm}>{cm}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="filter-group">
                                     <label>Campaign Type</label>
                                     <select value={filters.type} onChange={(e) => updateFilter('type', e.target.value)}>
                                         <option value="">All Types</option>
@@ -1040,10 +1099,25 @@
                                                 <th>Events</th>
                                                 <th>Social/Deal</th>
                                                 <th>Team</th>
-                                                <th>Start Date</th>
-                                                <th>End Date</th>
+                                                <th 
+                                                    onClick={() => handleSort('startDate')}
+                                                    style={{cursor: 'pointer', userSelect: 'none'}}
+                                                >
+                                                    Start Date{getSortIndicator('startDate')}
+                                                </th>
+                                                <th 
+                                                    onClick={() => handleSort('endDate')}
+                                                    style={{cursor: 'pointer', userSelect: 'none'}}
+                                                >
+                                                    End Date{getSortIndicator('endDate')}
+                                                </th>
                                                 <th>Status</th>
-                                                <th>Net Total</th>
+                                                <th 
+                                                    onClick={() => handleSort('netTotal')}
+                                                    style={{cursor: 'pointer', userSelect: 'none'}}
+                                                >
+                                                    Budget{getSortIndicator('netTotal')}
+                                                </th>
                                                 <th>Links</th>
                                                 <th>Actions</th>
                                             </tr>

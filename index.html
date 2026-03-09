@@ -618,17 +618,13 @@
                                 <option value="">Select...</option>
                                 <option value="Rose Patard">Rose Patard</option>
                                 <option value="Brooke Jorgensen">Brooke Jorgensen</option>
-                                <option value="NA">NA</option>
                             </select>
                         </div>
                     </div>
 
                     <!-- Programmatic-specific fields -->
                     <div id="programmaticFields" class="conditional-fields">
-                        <div class="form-group">
-                            <label for="opOwner">Op Owner:</label>
-                            <input type="text" id="opOwner">
-                        </div>
+                        <!-- Op Owner field removed per request -->
                     </div>
 
                     <div class="form-group">
@@ -1111,7 +1107,7 @@
                 data.social = document.getElementById('social').value;
                 data.screengrabs = document.getElementById('screengrabs').value;
             } else {
-                data.opOwner = document.getElementById('opOwner').value;
+                // Programmatic - no Op Owner field
                 data.programmaticType = document.getElementById('programmaticType').value;
                 data.dealAccepted = document.getElementById('dealAccepted').value;
             }

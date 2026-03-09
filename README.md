@@ -2,9 +2,6 @@
 
 A comprehensive suite of planning operations tools built for the Thomson Reuters EMEA advertising team.
 
-![Reuters](https://img.shields.io/badge/Reuters-D64000?style=for-the-badge&logo=reuters&logoColor=white)
-![Status](https://img.shields.io/badge/Status-Production-green?style=for-the-badge)
-
 ---
 
 ## 🎯 Overview
